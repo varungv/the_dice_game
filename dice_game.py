@@ -57,11 +57,14 @@ def pre_roll_rules(player_name):
     :param player_name:
     :return:
     """
-    consecutive_ones_rule = not(len(player_roll_history[player_name]) >= 2 and player_roll_history[player_name][-2:] == [1, 1])
+    consecutive_ones_rule = True
+    if len(player_roll_history[player_name]) >= 2 and player_roll_history[player_name][-2:] == [1, 1]:
+        print(f"{player_name} chance will be skipped as he got two consecutive 1's")
+        consecutive_ones_rule = False
     return consecutive_ones_rule
 
 
-def post_roll_rules(player_name, rolled_number):
+def post_roll_rules(player_name, rolled_number, threshold_points, curr_point):
     """
         Function to apply all the post roll rule
     :param player_name:
@@ -71,22 +74,21 @@ def post_roll_rules(player_name, rolled_number):
     extra_points = 0
     if rolled_number == 6:
         print(f'{player_name} gets another chance as he rolled a 6!!!')
-        get_roll_input(player_name)
-        extra_points += roll_dice(player_name)
+        extra_points += roll_dice(player_name, threshold_points, curr_point+rolled_number)
     return extra_points
 
 
-def roll_dice(player_name):
+def roll_dice(player_name, threshold_points, curr_point):
     """
         Function to return a random rolled value with all the rules of the game applied
     :param player_name:
     :return:
     """
     if pre_roll_rules(player_name):
-        get_roll_input(player_name)
         choice = random.choice(dice_choices)  # Having pure randomness in computer system is not possible
         print(f'{player_name} rolled a {str(choice)}')
-        choice += post_roll_rules(player_name, choice)
+        if (curr_point + choice) < threshold_points:
+            choice += post_roll_rules(player_name, choice, threshold_points, curr_point)
         return choice
     else:
         return 0
@@ -119,7 +121,8 @@ def game():
     try:
         for player in itertools.cycle(players_list):
             if player not in ranking_map:
-                points_map[player] += roll_dice(player)
+                get_roll_input(player)
+                points_map[player] += roll_dice(player, threshold_points, points_map[player])
                 if points_map[player] >= threshold_points:
                     # the player finished
                     current_rank += 1
